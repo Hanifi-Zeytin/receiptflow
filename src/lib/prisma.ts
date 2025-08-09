@@ -9,6 +9,7 @@ const createPrismaClient = () => {
   try {
     console.log("Creating Prisma client...");
     console.log("DATABASE_URL:", process.env.DATABASE_URL ? "Set" : "Not set");
+    console.log("GEMINI_API_KEY:", process.env.GEMINI_API_KEY ? "Set" : "Not set");
     
     const client = new PrismaClient({
       log: ['query', 'info', 'warn', 'error'],

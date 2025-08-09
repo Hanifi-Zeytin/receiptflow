@@ -90,13 +90,23 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(inputs as any);
     const text = result.response.text();
 
-    // Try parse to JSON; if fails, return raw
+    const clean = text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+    const firstBrace = clean.indexOf("{");
+    const lastBrace = clean.lastIndexOf("}");
+    const candidate = firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
+      ? clean.slice(firstBrace, lastBrace + 1)
+      : clean;
+
     let parsed: HeaderJson | null = null;
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(candidate);
     } catch {}
 
-    return NextResponse.json({ raw: text, headerJson: parsed ?? null });
+    return NextResponse.json({ raw: text, headerJson: parsed });
   } catch (error) {
     console.error("Gemini analyze error:", error);
     return NextResponse.json({ error: "Analiz sırasında hata oluştu" }, { status: 500 });

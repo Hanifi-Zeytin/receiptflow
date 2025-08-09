@@ -80,10 +80,26 @@ async function analyzeWithGemini(input: { base64?: string; imageUrl?: string; he
 
     const result = await model.generateContent(parts as any);
     const text = result.response.text();
+
+    // Bazı durumlarda model JSON'u ```json ... ``` bloklarıyla veya metin karışık döndürebilir.
+    const clean = text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+
+    // İçerikte ilk { ... } JSON nesnesini yakalamaya çalış
+    const firstBrace = clean.indexOf("{");
+    const lastBrace = clean.lastIndexOf("}");
+    const candidate = firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
+      ? clean.slice(firstBrace, lastBrace + 1)
+      : clean;
+
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(candidate);
       return parsed as HeaderJson;
-    } catch {
+    } catch (e) {
+      console.warn("Gemini JSON parse failed; raw=", text);
       return null;
     }
   } catch (e) {
