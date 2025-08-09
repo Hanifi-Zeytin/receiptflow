@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { uploadFileToS3, saveFileLocally } from "../../lib/storage";
+import { uploadFileToS3, saveFileLocally } from "@/lib/storage";
 
 export async function GET() {
   const receipts = await prisma.receipt.findMany({
@@ -11,7 +11,7 @@ export async function GET() {
   return NextResponse.json({ receipts });
 }
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const maybeFile = formData.get("file");
   const providedFileUrl = formData.get("fileUrl")?.toString();
@@ -20,11 +20,11 @@ export async function POST(req) {
   const grandTotalInput = formData.get("grandTotal")?.toString();
 
   let fileUrl = providedFileUrl ?? "";
-  let imageBuffer = null;
+  let imageBuffer: Buffer | null = null;
 
   // If a file is provided, save it to cloud storage or local storage
   if (maybeFile && typeof maybeFile !== "string") {
-    const file = maybeFile;
+    const file = maybeFile as File;
     const arrayBuffer = await file.arrayBuffer();
     imageBuffer = Buffer.from(arrayBuffer);
     
@@ -59,5 +59,3 @@ export async function POST(req) {
 
   return NextResponse.json({ receipt }, { status: 201 });
 }
-
-
