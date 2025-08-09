@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const receipt = await prisma.receipt.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { items: true },
   });
   if (!receipt) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -15,11 +16,12 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const body = await req.json();
   const receipt = await prisma.receipt.update({
-    where: { id: params.id },
+    where: { id },
     data: body,
   });
   return NextResponse.json({ receipt });
