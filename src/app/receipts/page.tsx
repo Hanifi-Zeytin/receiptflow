@@ -124,10 +124,10 @@ export default function ReceiptsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">Fiş Yönetimi</h2>
               <p className="mt-2 text-lg text-gray-600">Tüm fişlerinizi görüntüleyin, düzenleyin ve yönetin</p>
@@ -135,7 +135,7 @@ export default function ReceiptsPage() {
             <div className="mt-4 sm:mt-0">
               <Link
                 href="/upload"
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors w-full sm:w-auto justify-center"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -147,7 +147,7 @@ export default function ReceiptsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -214,14 +214,14 @@ export default function ReceiptsPage() {
         </div>
 
         {/* Filters and Export */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-4">
               <label className="text-sm font-medium text-gray-700">Filtrele:</label>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as 'all' | 'draft' | 'approved' | 'rejected')}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
               >
                 <option value="all">Tümü</option>
                 <option value="draft">Taslak</option>
@@ -231,11 +231,11 @@ export default function ReceiptsPage() {
             </div>
             <div className="flex items-center space-x-3">
               <span className="text-sm text-gray-500">Dışa Aktar:</span>
-              <div className="flex space-x-2">
-                <a href="/api/exports?format=csv" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">CSV</a>
-                <a href="/api/exports?format=xlsx" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">XLSX</a>
-                <a href="/api/exports?format=json" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">JSON</a>
-                <a href="/api/exports?format=pdf" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">PDF</a>
+              <div className="grid grid-cols-2 sm:flex sm:space-x-2 gap-2 w-full sm:w-auto">
+                <a href="/api/exports?format=csv" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors w-full justify-center">CSV</a>
+                <a href="/api/exports?format=xlsx" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors w-full justify-center">XLSX</a>
+                <a href="/api/exports?format=json" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors w-full justify-center">JSON</a>
+                <a href="/api/exports?format=pdf" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors w-full justify-center">PDF</a>
               </div>
             </div>
           </div>

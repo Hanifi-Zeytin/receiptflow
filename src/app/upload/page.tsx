@@ -137,13 +137,13 @@ export default function UploadPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Fiş Yükle</h2>
           <p className="text-lg text-gray-600">Fişinizi yükleyin, JSON verisini hemen görün ve indirin</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
           <form onSubmit={onSubmit} className="space-y-8">
             {/* File Upload Section */}
             <div>
@@ -180,20 +180,20 @@ export default function UploadPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+              <div className="space-y-4">
                     <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
                       <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Dosya seçin veya sürükleyip bırakın</p>
-                      <p className="text-xs text-gray-500">JPG, PNG, PDF (max 10MB)</p>
+                  <p className="text-sm font-medium text-gray-900">Dosya seçin veya sürükleyip bırakın</p>
+                  <p className="text-xs text-gray-500">JPG, PNG, PDF (max 10MB)</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center"
                     >
                       Dosya Seç
                     </button>
