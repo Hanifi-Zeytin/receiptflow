@@ -9,6 +9,7 @@ Modern ve kullanıcı dostu fiş yönetim uygulaması. OCR teknolojisi ile fişl
 - 📊 **Dashboard**: Detaylı istatistikler ve raporlama
 - 🔄 **Onay Sistemi**: Fiş onaylama/reddetme işlemleri
 - 📤 **Dışa Aktarma**: CSV, XLSX, JSON formatlarında raporlar
+- 🤖 **Gemini ile AI Analizi**: `/api/ai/gemini` üzerinden fiş görselinden başlık alanlarını otomatik çıkarır (isletme, adres, telefon, tarih, saat, satis_no, odeme_tipi, kasiyer, genel_toplam_kdv_haric, genel_toplam_kdv_dahil). Upload sayfasında "Gemini ile Analiz Et" butonu ile kullanılabilir.
 - 🌐 **Cloud Storage**: Güvenli dosya depolama
 - 📱 **Responsive**: Mobil ve masaüstü uyumlu
 
@@ -19,6 +20,7 @@ Modern ve kullanıcı dostu fiş yönetim uygulaması. OCR teknolojisi ile fişl
 - Node.js 18+ 
 - PostgreSQL veritabanı
 - AWS S3 (opsiyonel, dosya yükleme için)
+ - Gemini API anahtarı (opsiyonel AI analiz için)
 
 ### Kurulum
 
@@ -48,6 +50,9 @@ AWS_ACCESS_KEY_ID="your_access_key"
 AWS_SECRET_ACCESS_KEY="your_secret_key"
 AWS_REGION="us-east-1"
 AWS_S3_BUCKET="receiptflow-uploads"
+
+# Gemini (opsiyonel)
+GEMINI_API_KEY="your_gemini_api_key"
 ```
 
 4. **Veritabanını hazırlayın**

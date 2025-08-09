@@ -44,6 +44,8 @@ export default function UploadPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [lastReceiptJson, setLastReceiptJson] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -104,6 +106,52 @@ export default function UploadPage() {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+  };
+
+  const analyzeWithGemini = async () => {
+    try {
+      setAiLoading(true);
+      setAiResult(null);
+      let imageBase64: string | undefined;
+      let imageUrlPayload: string | undefined;
+
+      if (file) {
+        const buf = await file.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        imageBase64 = btoa(binary);
+      } else if (fileUrl) {
+        imageUrlPayload = fileUrl;
+      } else {
+        setAiResult("Lütfen önce bir fiş dosyası seçin veya URL girin.");
+        setAiLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/ai/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64,
+          imageUrl: imageUrlPayload,
+          headerHint: {
+            isletme: vendorName || undefined,
+            genel_toplam_kdv_dahil: grandTotal || undefined,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAiResult(JSON.stringify(data.headerJson ?? data.raw, null, 2));
+      } else {
+        setAiResult(data.error ?? "Analiz başarısız");
+      }
+    } catch (e) {
+      setAiResult("Analiz sırasında hata oluştu");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -259,6 +307,14 @@ export default function UploadPage() {
                 İptal
               </Link>
               <button
+                type="button"
+                onClick={analyzeWithGemini}
+                disabled={aiLoading || (!file && !fileUrl)}
+                className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              >
+                {aiLoading ? "Gemini analiz ediliyor..." : "Gemini ile Analiz Et"}
+              </button>
+              <button
                 type="submit"
                 disabled={loading || (!file && !fileUrl)}
                 className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
@@ -303,6 +359,23 @@ export default function UploadPage() {
                 </a>
               </div>
               <pre className="text-xs bg-gray-50 border border-gray-200 rounded p-3 overflow-auto max-h-96 whitespace-pre-wrap break-all">{lastReceiptJson}</pre>
+            </div>
+          )}
+
+          {/* AI Result */}
+          {aiResult && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-700">Gemini Analiz Sonucu</h3>
+                <a
+                  href={`data:application/json;charset=utf-8,${encodeURIComponent(aiResult)}`}
+                  download="receipt-ai.json"
+                  className="text-blue-600 text-sm hover:text-blue-700"
+                >
+                  İndir
+                </a>
+              </div>
+              <pre className="text-xs bg-gray-50 border border-gray-200 rounded p-3 overflow-auto max-h-96 whitespace-pre-wrap break-all">{aiResult}</pre>
             </div>
           )}
         </div>
