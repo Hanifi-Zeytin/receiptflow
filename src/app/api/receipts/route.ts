@@ -3,6 +3,9 @@ export const runtime = "nodejs";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { uploadFileToS3, saveFileLocally } from "@/lib/storage";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import path from "path";
+import fs from "fs/promises";
 
 type HeaderJson = {
   isletme?: string;
@@ -33,6 +36,60 @@ function extractHeaderJson(params: {
     if (!Number.isNaN(num)) header.genel_toplam_kdv_dahil = Number(num.toFixed(2));
   }
   return header;
+}
+
+async function toBase64FromFileSystem(publicRelativePath: string): Promise<{ base64: string; mimeType: string }> {
+  const filePath = path.join(process.cwd(), "public", publicRelativePath.replace(/^\/+/, ""));
+  const data = await fs.readFile(filePath);
+  const ext = path.extname(publicRelativePath).toLowerCase();
+  const mimeType = ext === ".png" ? "image/png" : ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : ext === ".pdf" ? "application/pdf" : "application/octet-stream";
+  return { base64: data.toString("base64"), mimeType };
+}
+
+async function toBase64FromUrl(url: string): Promise<{ base64: string; mimeType: string }> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Resim indirilemedi: ${res.status}`);
+  const arrayBuf = await res.arrayBuffer();
+  const base64 = Buffer.from(arrayBuf).toString("base64");
+  const mimeType = res.headers.get("content-type") || "image/*";
+  return { base64, mimeType };
+}
+
+async function analyzeWithGemini(input: { base64?: string; imageUrl?: string; headerHint?: HeaderJson }): Promise<HeaderJson | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = [
+      "Aşağıdaki fiş görselinden sadece şu alanları çıkar ve JSON olarak döndür:",
+      "isletme, adres, telefon, tarih (dd.mm.yyyy), saat (hh:mm), satis_no, odeme_tipi, kasiyer, genel_toplam_kdv_haric, genel_toplam_kdv_dahil",
+      "Sadece geçerli JSON döndür; açıklama ekleme.",
+      input.headerHint?.isletme ? `İpucu - İşletme: ${input.headerHint.isletme}` : "",
+      input.headerHint?.tarih ? `İpucu - Tarih: ${input.headerHint.tarih}` : "",
+      input.headerHint?.genel_toplam_kdv_dahil ? `İpucu - Toplam: ${input.headerHint.genel_toplam_kdv_dahil}` : "",
+    ].filter(Boolean).join("\n");
+
+    const parts: any[] = [prompt];
+    if (input.base64) {
+      parts.push({ inlineData: { mimeType: "image/*", data: input.base64 } });
+    } else if (input.imageUrl) {
+      const { base64, mimeType } = await toBase64FromUrl(input.imageUrl);
+      parts.push({ inlineData: { mimeType, data: base64 } });
+    }
+
+    const result = await model.generateContent(parts as any);
+    const text = result.response.text();
+    try {
+      const parsed = JSON.parse(text);
+      return parsed as HeaderJson;
+    } catch {
+      return null;
+    }
+  } catch (e) {
+    console.error("Gemini analyze failed:", e);
+    return null;
+  }
 }
 
 export async function GET() {
@@ -96,17 +153,64 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file or fileUrl is required" }, { status: 400 });
     }
 
-    const headerJson = extractHeaderJson({ vendorNameInput, dateInput, grandTotalInput });
+    let headerJson = extractHeaderJson({ vendorNameInput, dateInput, grandTotalInput });
+
+    // Otomatik AI analizi (varsa)
+    try {
+      const hasApiKey = !!process.env.GEMINI_API_KEY;
+      if (hasApiKey) {
+        let base64: string | undefined;
+        let inferUrl: string | undefined;
+
+        if (imageBuffer) {
+          base64 = imageBuffer.toString("base64");
+        } else if (fileUrl.startsWith("http")) {
+          inferUrl = fileUrl;
+        } else if (fileUrl.startsWith("/uploads/")) {
+          const fromFs = await toBase64FromFileSystem(fileUrl);
+          base64 = fromFs.base64;
+        }
+
+        if (base64 || inferUrl) {
+          const ai = await analyzeWithGemini({
+            base64,
+            imageUrl: inferUrl,
+            headerHint: headerJson,
+          });
+          if (ai && Object.keys(ai).length) {
+            headerJson = { ...headerJson, ...ai };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("AI analysis skipped due to error:", e);
+    }
 
     console.log("Creating receipt in database...");
     console.log("Database URL:", process.env.DATABASE_URL ? "Set" : "Not set");
 
+    // AI sonuçlarını DB alanlarına yansıt (tercihen AI → input fallback)
+    const vendorFromAI = headerJson.isletme ?? undefined;
+    const totalFromAI = headerJson.genel_toplam_kdv_dahil ?? undefined;
+    const parseAiDate = (val?: string) => {
+      if (!val) return undefined;
+      // dd.mm.yyyy beklenir; değilse Date.parse'a bırak
+      const m = val.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+      if (m) {
+        const [_, dd, mm, yyyy] = m;
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      }
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? undefined : d;
+    };
+    const dateFromAI = parseAiDate(headerJson.tarih);
+
     const receipt = await prisma.receipt.create({
       data: {
         fileUrl,
-        vendorName: vendorNameInput ?? null,
-        date: dateInput ? new Date(dateInput) : null,
-        grandTotal: grandTotalInput ?? null,
+        vendorName: vendorFromAI ?? vendorNameInput ?? null,
+        date: dateFromAI ?? (dateInput ? new Date(dateInput) : null),
+        grandTotal: (typeof totalFromAI === 'number' ? totalFromAI : (grandTotalInput ? Number(String(grandTotalInput).replace(/[^0-9.,]/g, '').replace(',', '.')) : undefined)) ?? null,
         status: "DRAFT",
         headerJson: Object.keys(headerJson).length ? (headerJson as unknown as any) : undefined,
       },

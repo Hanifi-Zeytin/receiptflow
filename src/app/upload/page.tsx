@@ -38,14 +38,12 @@ function toHeaderJson(receipt: any): HeaderJson {
 export default function UploadPage() {
   const [fileUrl, setFileUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [vendorName, setVendorName] = useState("");
-  const [grandTotal, setGrandTotal] = useState("");
+  // Manuel alanlar kaldırıldı: satıcı adı ve toplam tutar AI tarafından çıkarılacak
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [lastReceiptJson, setLastReceiptJson] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<string | null>(null);
+  // Otomatik AI entegrasyonu artık sunucuda yapılıyor; client tarafında düğme kaldırıldı
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -57,8 +55,7 @@ export default function UploadPage() {
     const form = new FormData();
     if (file) form.append("file", file);
     if (fileUrl) form.append("fileUrl", fileUrl);
-    if (vendorName) form.append("vendorName", vendorName);
-    if (grandTotal) form.append("grandTotal", grandTotal);
+    // Manuel alan göndermiyoruz; AI sunucuda çıkarır
     
     try {
       const res = await fetch("/api/receipts", { method: "POST", body: form });
@@ -72,8 +69,7 @@ export default function UploadPage() {
         // Reset form
         setFile(null);
         setFileUrl("");
-        setVendorName("");
-        setGrandTotal("");
+        // Manuel alan yok
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         setMessage(data.error ?? "❌ Hata oluştu");
@@ -108,51 +104,6 @@ export default function UploadPage() {
     e.preventDefault();
   };
 
-  const analyzeWithGemini = async () => {
-    try {
-      setAiLoading(true);
-      setAiResult(null);
-      let imageBase64: string | undefined;
-      let imageUrlPayload: string | undefined;
-
-      if (file) {
-        const buf = await file.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let binary = "";
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        imageBase64 = btoa(binary);
-      } else if (fileUrl) {
-        imageUrlPayload = fileUrl;
-      } else {
-        setAiResult("Lütfen önce bir fiş dosyası seçin veya URL girin.");
-        setAiLoading(false);
-        return;
-      }
-
-      const res = await fetch("/api/ai/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageBase64,
-          imageUrl: imageUrlPayload,
-          headerHint: {
-            isletme: vendorName || undefined,
-            genel_toplam_kdv_dahil: grandTotal || undefined,
-          },
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAiResult(JSON.stringify(data.headerJson ?? data.raw, null, 2));
-      } else {
-        setAiResult(data.error ?? "Analiz başarısız");
-      }
-    } catch (e) {
-      setAiResult("Analiz sırasında hata oluştu");
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -274,29 +225,7 @@ export default function UploadPage() {
               <p className="text-xs text-gray-500 mt-1">Dosya yükleme yerine URL de kullanabilirsiniz</p>
             </div>
 
-            {/* Additional Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Satıcı Adı</label>
-                <input
-                  type="text"
-                  value={vendorName}
-                  onChange={(e) => setVendorName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Örn: ABC Market"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Toplam Tutar</label>
-                <input
-                  type="text"
-                  value={grandTotal}
-                  onChange={(e) => setGrandTotal(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Örn: 150.50 TL"
-                />
-              </div>
-            </div>
+            {/* Ek bilgi alanları kaldırıldı */}
 
             {/* Submit Button */}
             <div className="flex justify-end space-x-4">
@@ -306,14 +235,6 @@ export default function UploadPage() {
               >
                 İptal
               </Link>
-              <button
-                type="button"
-                onClick={analyzeWithGemini}
-                disabled={aiLoading || (!file && !fileUrl)}
-                className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-              >
-                {aiLoading ? "Gemini analiz ediliyor..." : "Gemini ile Analiz Et"}
-              </button>
               <button
                 type="submit"
                 disabled={loading || (!file && !fileUrl)}
@@ -362,22 +283,7 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* AI Result */}
-          {aiResult && (
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-700">Gemini Analiz Sonucu</h3>
-                <a
-                  href={`data:application/json;charset=utf-8,${encodeURIComponent(aiResult)}`}
-                  download="receipt-ai.json"
-                  className="text-blue-600 text-sm hover:text-blue-700"
-                >
-                  İndir
-                </a>
-              </div>
-              <pre className="text-xs bg-gray-50 border border-gray-200 rounded p-3 overflow-auto max-h-96 whitespace-pre-wrap break-all">{aiResult}</pre>
-            </div>
-          )}
+          {/* AI sonucu artık otomatik olarak kayda yansıyor ve "Oluşturulan Fiş JSON" bölümünde görülür */}
         </div>
 
         {/* Features Preview */}
