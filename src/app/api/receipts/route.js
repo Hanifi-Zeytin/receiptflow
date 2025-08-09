@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../lib/prisma";
 import { randomUUID } from "crypto";
-import { uploadFileToS3, saveFileLocally } from "@/lib/storage";
+import { uploadFileToS3, saveFileLocally } from "../../lib/storage";
 
 export async function GET() {
   const receipts = await prisma.receipt.findMany({
