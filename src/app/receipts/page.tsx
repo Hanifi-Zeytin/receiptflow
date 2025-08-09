@@ -15,6 +15,8 @@ export default function ReceiptsPage() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'draft' | 'approved' | 'rejected'>('all');
+  const [jsonModalOpen, setJsonModalOpen] = useState(false);
+  const [jsonContent, setJsonContent] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/receipts")
@@ -76,6 +78,18 @@ export default function ReceiptsPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const openJsonModal = async (id: string) => {
+    try {
+      const res = await fetch(`/api/receipts/${id}`);
+      const data = await res.json();
+      setJsonContent(JSON.stringify(data.receipt ?? data, null, 2));
+      setJsonModalOpen(true);
+    } catch (e) {
+      setJsonContent('{"error":"JSON yüklenemedi"}');
+      setJsonModalOpen(true);
+    }
   };
 
   return (
@@ -218,24 +232,10 @@ export default function ReceiptsPage() {
             <div className="flex items-center space-x-3">
               <span className="text-sm text-gray-500">Dışa Aktar:</span>
               <div className="flex space-x-2">
-                <a
-                  href="/api/exports?format=csv"
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  CSV
-                </a>
-                <a
-                  href="/api/exports?format=xlsx"
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  XLSX
-                </a>
-                <a
-                  href="/api/exports?format=json"
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  JSON
-                </a>
+                <a href="/api/exports?format=csv" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">CSV</a>
+                <a href="/api/exports?format=xlsx" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">XLSX</a>
+                <a href="/api/exports?format=json" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">JSON</a>
+                <a href="/api/exports?format=pdf" className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">PDF</a>
               </div>
             </div>
           </div>
@@ -262,36 +262,19 @@ export default function ReceiptsPage() {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz fiş bulunmuyor</h3>
               <p className="text-gray-500 mb-6">İlk fişinizi yükleyerek başlayın</p>
-              <Link
-                href="/upload"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-              >
-                Fiş Yükle
-              </Link>
+              <Link href="/upload" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">Fiş Yükle</Link>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fiş
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Satıcı
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tutar
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Durum
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      İşlemler
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiş</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Satıcı</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tutar</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -305,57 +288,31 @@ export default function ReceiptsPage() {
                             </svg>
                           </div>
                           <div className="ml-4">
-                            <a
-                              href={receipt.fileUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                            >
-                              Görüntüle
-                            </a>
+                            <a href={receipt.fileUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 hover:text-blue-700">Görüntüle</a>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {receipt.vendorName || "(Satıcı belirtilmemiş)"}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{receipt.vendorName || "(Satıcı belirtilmemiş)"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 font-medium">
-                          {receipt.grandTotal || "-"}
-                        </div>
+                        <div className="text-sm text-gray-900 font-medium">{receipt.grandTotal || "-"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(receipt.status)}`}>
-                          {getStatusText(receipt.status)}
-                        </span>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(receipt.status)}`}>{getStatusText(receipt.status)}</span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(receipt.createdAt)}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(receipt.createdAt)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-3">
+                          <button onClick={() => openJsonModal(receipt.id)} className="text-blue-600 hover:text-blue-700 text-sm font-medium">JSON Gör</button>
                           {receipt.status === 'DRAFT' && (
                             <>
-                              <button
-                                onClick={() => handleStatusChange(receipt.id, 'approve')}
-                                className="text-green-600 hover:text-green-700 text-sm font-medium"
-                              >
-                                Onayla
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(receipt.id, 'reject')}
-                                className="text-red-600 hover:text-red-700 text-sm font-medium"
-                              >
-                                Reddet
-                              </button>
+                              <button onClick={() => handleStatusChange(receipt.id, 'approve')} className="text-green-600 hover:text-green-700 text-sm font-medium">Onayla</button>
+                              <button onClick={() => handleStatusChange(receipt.id, 'reject')} className="text-red-600 hover:text-red-700 text-sm font-medium">Reddet</button>
                             </>
                           )}
                           {receipt.status !== 'DRAFT' && (
-                            <span className="text-gray-400 text-sm">
-                              {receipt.status === 'APPROVED' ? 'Onaylandı' : 'Reddedildi'}
-                            </span>
+                            <span className="text-gray-400 text-sm">{receipt.status === 'APPROVED' ? 'Onaylandı' : 'Reddedildi'}</span>
                           )}
                         </div>
                       </td>
@@ -367,6 +324,23 @@ export default function ReceiptsPage() {
           )}
         </div>
       </main>
+
+      {/* JSON Modal */}
+      {jsonModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white w-full max-w-3xl rounded-lg shadow-lg overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h3 className="text-lg font-semibold">Fiş JSON</h3>
+              <button onClick={() => setJsonModalOpen(false)} className="text-gray-500 hover:text-gray-700">Kapat</button>
+            </div>
+            <div className="p-4">
+              <pre className="text-xs bg-gray-50 border border-gray-200 rounded p-3 overflow-auto max-h-[60vh] whitespace-pre-wrap break-all">
+{jsonContent}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

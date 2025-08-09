@@ -10,12 +10,14 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const [lastReceiptJson, setLastReceiptJson] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    setLastReceiptJson(null);
     
     const form = new FormData();
     if (file) form.append("file", file);
@@ -30,6 +32,7 @@ export default function UploadPage() {
       if (res.ok) {
         setMessage("✅ Fiş başarıyla yüklendi!");
         setMessageType('success');
+        setLastReceiptJson(JSON.stringify(data.receipt, null, 2));
         // Reset form
         setFile(null);
         setFileUrl("");
@@ -104,7 +107,7 @@ export default function UploadPage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Fiş Yükle</h2>
-          <p className="text-lg text-gray-600">Fişinizi yükleyin, OCR teknolojisi ile otomatik olarak işlensin</p>
+          <p className="text-lg text-gray-600">Fişinizi yükleyin, JSON verisini hemen görün ve indirin</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
@@ -251,6 +254,23 @@ export default function UploadPage() {
               {message}
             </div>
           )}
+
+          {/* Last Receipt JSON */}
+          {lastReceiptJson && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-700">Oluşturulan Fiş JSON</h3>
+                <a
+                  href={`data:application/json;charset=utf-8,${encodeURIComponent(lastReceiptJson)}`}
+                  download="receipt.json"
+                  className="text-blue-600 text-sm hover:text-blue-700"
+                >
+                  İndir
+                </a>
+              </div>
+              <pre className="text-xs bg-gray-50 border border-gray-200 rounded p-3 overflow-auto max-h-96 whitespace-pre-wrap break-all">{lastReceiptJson}</pre>
+            </div>
+          )}
         </div>
 
         {/* Features Preview */}
@@ -262,7 +282,7 @@ export default function UploadPage() {
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Hızlı İşlem</h3>
-            <p className="text-sm text-gray-600">OCR teknolojisi ile saniyeler içinde fiş bilgilerini çıkarın</p>
+            <p className="text-sm text-gray-600">JSON verisini anında görüntüleyin ve indirin</p>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -271,8 +291,8 @@ export default function UploadPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Yüksek Doğruluk</h3>
-            <p className="text-sm text-gray-600">%95 doğruluk oranı ile güvenilir sonuçlar</p>
+            <h3 className="font-semibold text-gray-900 mb-2">Kolay Paylaşım</h3>
+            <p className="text-sm text-gray-600">JSON çıktısını paylaşın veya entegrasyonlar için kullanın</p>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -281,8 +301,8 @@ export default function UploadPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Otomatik Düzenleme</h3>
-            <p className="text-sm text-gray-600">Çıkarılan bilgileri kolayca düzenleyin ve kaydedin</p>
+            <h3 className="font-semibold text-gray-900 mb-2">Düzenlenebilir</h3>
+            <p className="text-sm text-gray-600">İhtiyacınıza göre alanları genişletin (OCR eklenebilir)</p>
           </div>
         </div>
       </main>

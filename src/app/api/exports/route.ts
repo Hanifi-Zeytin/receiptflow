@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 import * as XLSX from "xlsx";
+import PDFDocument from "pdfkit";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -31,6 +32,40 @@ export async function GET(req: NextRequest) {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": "attachment; filename=receipts.xlsx",
+      },
+    });
+  }
+
+  if (format === "pdf") {
+    const doc = new PDFDocument({ size: "A4", margin: 36 });
+    const chunks: Buffer[] = [];
+    const streamFinished = new Promise<void>((resolve) => {
+      doc.on("data", (chunk) => chunks.push(chunk as Buffer));
+      doc.on("end", () => resolve());
+    });
+
+    doc.fontSize(18).text("Receipts Export", { align: "center" });
+    doc.moveDown();
+
+    const headers = ["ID", "Vendor", "Date", "Total", "Status"] as const;
+    doc.fontSize(12).text(headers.join("  |  "));
+    doc.moveDown(0.5);
+    doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke();
+    doc.moveDown(0.5);
+
+    rows.forEach((r) => {
+      const line = [r.id.slice(0, 8), r.vendorName, r.date, String(r.grandTotal ?? ""), r.status].join("  |  ");
+      doc.text(line);
+    });
+
+    doc.end();
+    await streamFinished;
+
+    const pdfBuffer = Buffer.concat(chunks);
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=receipts.pdf",
       },
     });
   }
