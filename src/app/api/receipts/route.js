@@ -11,7 +11,7 @@ export async function GET() {
   return NextResponse.json({ receipts });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req) {
   const formData = await req.formData();
   const maybeFile = formData.get("file");
   const providedFileUrl = formData.get("fileUrl")?.toString();
@@ -20,11 +20,11 @@ export async function POST(req: NextRequest) {
   const grandTotalInput = formData.get("grandTotal")?.toString();
 
   let fileUrl = providedFileUrl ?? "";
-  let imageBuffer: Buffer | null = null;
+  let imageBuffer = null;
 
   // If a file is provided, save it to cloud storage or local storage
   if (maybeFile && typeof maybeFile !== "string") {
-    const file = maybeFile as File;
+    const file = maybeFile;
     const arrayBuffer = await file.arrayBuffer();
     imageBuffer = Buffer.from(arrayBuffer);
     
