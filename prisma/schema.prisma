@@ -62,6 +62,7 @@ model Receipt {
   status          ReceiptStatus @default(DRAFT)
   rawOcrText      String?
   ocrProvider     String?       @default("tesseract")
+  headerJson      Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

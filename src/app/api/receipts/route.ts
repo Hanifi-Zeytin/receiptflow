@@ -4,6 +4,37 @@ import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { uploadFileToS3, saveFileLocally } from "@/lib/storage";
 
+type HeaderJson = {
+  isletme?: string;
+  adres?: string;
+  telefon?: string;
+  tarih?: string;
+  saat?: string;
+  satis_no?: number;
+  odeme_tipi?: string;
+  kasiyer?: string;
+  genel_toplam_kdv_haric?: number;
+  genel_toplam_kdv_dahil?: number;
+};
+
+function extractHeaderJson(params: {
+  vendorNameInput?: string | null;
+  dateInput?: string | null;
+  grandTotalInput?: string | null;
+}): HeaderJson {
+  const { vendorNameInput, dateInput, grandTotalInput } = params;
+  const header: HeaderJson = {};
+  if (vendorNameInput) header.isletme = vendorNameInput;
+  if (dateInput) header.tarih = dateInput;
+  // Saat kullanıcıdan gelmiyor; boş bırakılır
+  // Ödeme tipi/kasiyer gelmiyor; boş bırakılır
+  if (grandTotalInput) {
+    const num = Number(String(grandTotalInput).replace(/[^0-9.,]/g, '').replace(',', '.'));
+    if (!Number.isNaN(num)) header.genel_toplam_kdv_dahil = Number(num.toFixed(2));
+  }
+  return header;
+}
+
 export async function GET() {
   try {
     const receipts = await prisma.receipt.findMany({
@@ -38,7 +69,6 @@ export async function POST(req: NextRequest) {
     let fileUrl = providedFileUrl ?? "";
     let imageBuffer: Buffer | null = null;
 
-    // If a file is provided, save it to cloud storage or local storage
     if (maybeFile && typeof maybeFile !== "string") {
       console.log("Processing file upload...");
       const file = maybeFile as File;
@@ -50,7 +80,6 @@ export async function POST(req: NextRequest) {
       
       console.log("File info:", { filename, size: imageBuffer.length, type: file.type });
       
-      // Use cloud storage in production, local storage in development
       if (process.env.NODE_ENV === 'production' && process.env.AWS_ACCESS_KEY_ID) {
         console.log("Using S3 storage...");
         fileUrl = await uploadFileToS3(imageBuffer, filename, file.type);
@@ -67,6 +96,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file or fileUrl is required" }, { status: 400 });
     }
 
+    const headerJson = extractHeaderJson({ vendorNameInput, dateInput, grandTotalInput });
+
     console.log("Creating receipt in database...");
     console.log("Database URL:", process.env.DATABASE_URL ? "Set" : "Not set");
 
@@ -77,6 +108,7 @@ export async function POST(req: NextRequest) {
         date: dateInput ? new Date(dateInput) : null,
         grandTotal: grandTotalInput ?? null,
         status: "DRAFT",
+        headerJson: Object.keys(headerJson).length ? (headerJson as unknown as any) : undefined,
       },
     });
 
