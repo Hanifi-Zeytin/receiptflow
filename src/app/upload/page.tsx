@@ -40,7 +40,7 @@ export default function UploadPage() {
         setMessage(data.error ?? "❌ Hata oluştu");
         setMessageType('error');
       }
-    } catch (error) {
+    } catch {
       setMessage("❌ Bağlantı hatası oluştu");
       setMessageType('error');
     }
@@ -175,7 +175,7 @@ export default function UploadPage() {
 
             {/* Alternative URL Input */}
             <div className="border-t pt-8">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Veya Dosya URL'si</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Veya Dosya URL&apos;si</label>
               <input
                 type="url"
                 value={fileUrl}

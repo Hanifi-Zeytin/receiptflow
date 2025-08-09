@@ -206,7 +206,7 @@ export default function ReceiptsPage() {
               <label className="text-sm font-medium text-gray-700">Filtrele:</label>
               <select
                 value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
+                onChange={(e) => setFilter(e.target.value as 'all' | 'draft' | 'approved' | 'rejected')}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Tümü</option>

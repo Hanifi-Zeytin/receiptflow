@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   // For now, skip OCR and just save the receipt
   // OCR can be added later with a different library
-  const parsed = {};
+  // const parsed = {};
 
   const receipt = await prisma.receipt.create({
     data: {

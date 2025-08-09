@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   const header = Object.keys(rows[0] ?? { id: "", vendorName: "", date: "", grandTotal: "", status: "", fileUrl: "" });
   const csv = [
     header.join(","),
-    ...rows.map((r) => header.map((h) => String((r as any)[h]).replaceAll('"', '""')).map((c)=>`"${c}"`).join(",")),
+    ...rows.map((r) => header.map((h) => String((r as Record<string, string>)[h]).replaceAll('"', '""')).map((c)=>`"${c}"`).join(",")),
   ].join("\n");
 
   return new NextResponse(csv, {
