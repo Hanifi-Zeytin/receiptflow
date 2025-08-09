@@ -24,7 +24,7 @@ Modern ve kullanıcı dostu fiş yönetim uygulaması. OCR teknolojisi ile fişl
 
 1. **Repository'yi klonlayın**
 ```bash
-git clone https://github.com/yourusername/receiptflow.git
+git clone https://github.com/Hanifi-Zeytin/receiptflow.git
 cd receiptflow
 ```
 
@@ -65,25 +65,13 @@ Uygulama http://localhost:3000 adresinde çalışacaktır.
 
 ## 🌐 Production Deployment
 
-### Vercel ile Deploy
+### Render ile Deploy
 
-1. **Vercel CLI'yi yükleyin**
-```bash
-npm i -g vercel
-```
-
-2. **Deploy edin**
-```bash
-vercel
-```
-
-3. **Environment variables'ları ayarlayın**
-Vercel dashboard'da şu environment variables'ları ekleyin:
-- `DATABASE_URL`
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_REGION`
-- `AWS_S3_BUCKET`
+1. **Render.com'a gidin**
+2. **GitHub hesabınızla giriş yapın**
+3. **"New +" → "Web Service"**
+4. **Repository'nizi seçin**
+5. **Otomatik deploy olacak**
 
 ### Manuel Deploy
 
@@ -122,7 +110,7 @@ receiptflow/
 - **Styling**: Tailwind CSS
 - **Database**: PostgreSQL, Prisma ORM
 - **File Storage**: AWS S3
-- **Deployment**: Vercel
+- **Deployment**: Render
 
 ## 📊 API Endpoints
 
@@ -178,11 +166,15 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 
 - Email: contact@receiptflow.com
 - Website: https://receiptflow.com
-- GitHub: https://github.com/yourusername/receiptflow
+- GitHub: https://github.com/Hanifi-Zeytin/receiptflow
 
 ## 🙏 Teşekkürler
 
 - [Next.js](https://nextjs.org/) - React framework
 - [Prisma](https://prisma.io/) - Database toolkit
 - [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [Vercel](https://vercel.com/) - Deployment platform
+- [Render](https://render.com/) - Deployment platform
+
+---
+
+**🚀 Uygulama şu anda Render'da deploy ediliyor!**
