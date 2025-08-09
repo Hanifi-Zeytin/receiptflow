@@ -2,6 +2,39 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 
+type HeaderJson = {
+  isletme: string;
+  adres: string;
+  telefon: string;
+  tarih: string;
+  saat: string;
+  satis_no: number | null;
+  odeme_tipi: string;
+  kasiyer: string;
+  genel_toplam_kdv_haric: number | null;
+  genel_toplam_kdv_dahil: number | null;
+};
+
+function toHeaderJson(receipt: any): HeaderJson {
+  // Tarihi dd.mm.yyyy olarak formatla
+  const tarih = receipt?.date ? new Date(receipt.date).toLocaleDateString("tr-TR") : "";
+  // Genel toplam (dahil) sayısallaştır
+  const toplamDahil = receipt?.grandTotal ? Number(String(receipt.grandTotal).replace(/[^0-9.,]/g, '').replace(',', '.')) : null;
+  // Şemaya uygun objeyi döndür
+  return {
+    isletme: receipt?.vendorName || "",
+    adres: receipt?.headerJson?.adres || "",
+    telefon: receipt?.headerJson?.telefon || "",
+    tarih,
+    saat: receipt?.headerJson?.saat || "",
+    satis_no: receipt?.headerJson?.satis_no ?? null,
+    odeme_tipi: receipt?.headerJson?.odeme_tipi || "",
+    kasiyer: receipt?.headerJson?.kasiyer || "",
+    genel_toplam_kdv_haric: receipt?.headerJson?.genel_toplam_kdv_haric ?? null,
+    genel_toplam_kdv_dahil: toplamDahil,
+  };
+}
+
 export default function UploadPage() {
   const [fileUrl, setFileUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -32,7 +65,8 @@ export default function UploadPage() {
       if (res.ok) {
         setMessage("✅ Fiş başarıyla yüklendi!");
         setMessageType('success');
-        setLastReceiptJson(JSON.stringify(data.receipt, null, 2));
+        const header = toHeaderJson(data.receipt);
+        setLastReceiptJson(JSON.stringify(header, null, 2));
         // Reset form
         setFile(null);
         setFileUrl("");
