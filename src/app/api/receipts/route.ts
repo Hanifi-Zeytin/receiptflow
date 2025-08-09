@@ -5,57 +5,67 @@ import { randomUUID } from "crypto";
 import { uploadFileToS3, saveFileLocally } from "@/lib/storage";
 
 export async function GET() {
-  const receipts = await prisma.receipt.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json({ receipts });
+  try {
+    const receipts = await prisma.receipt.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json({ receipts });
+  } catch (error) {
+    console.error("Error fetching receipts:", error);
+    return NextResponse.json({ error: "Failed to fetch receipts" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const maybeFile = formData.get("file");
-  const providedFileUrl = formData.get("fileUrl")?.toString();
-  const vendorNameInput = formData.get("vendorName")?.toString();
-  const dateInput = formData.get("date")?.toString();
-  const grandTotalInput = formData.get("grandTotal")?.toString();
+  try {
+    const formData = await req.formData();
+    const maybeFile = formData.get("file");
+    const providedFileUrl = formData.get("fileUrl")?.toString();
+    const vendorNameInput = formData.get("vendorName")?.toString();
+    const dateInput = formData.get("date")?.toString();
+    const grandTotalInput = formData.get("grandTotal")?.toString();
 
-  let fileUrl = providedFileUrl ?? "";
-  let imageBuffer: Buffer | null = null;
+    let fileUrl = providedFileUrl ?? "";
+    let imageBuffer: Buffer | null = null;
 
-  // If a file is provided, save it to cloud storage or local storage
-  if (maybeFile && typeof maybeFile !== "string") {
-    const file = maybeFile as File;
-    const arrayBuffer = await file.arrayBuffer();
-    imageBuffer = Buffer.from(arrayBuffer);
-    
-    const ext = file.name.split('.').pop() || "bin";
-    const filename = `${randomUUID()}.${ext}`;
-    
-    // Use cloud storage in production, local storage in development
-    if (process.env.NODE_ENV === 'production' && process.env.AWS_ACCESS_KEY_ID) {
-      fileUrl = await uploadFileToS3(imageBuffer, filename, file.type);
-    } else {
-      fileUrl = await saveFileLocally(imageBuffer, filename);
+    // If a file is provided, save it to cloud storage or local storage
+    if (maybeFile && typeof maybeFile !== "string") {
+      const file = maybeFile as File;
+      const arrayBuffer = await file.arrayBuffer();
+      imageBuffer = Buffer.from(arrayBuffer);
+      
+      const ext = file.name.split('.').pop() || "bin";
+      const filename = `${randomUUID()}.${ext}`;
+      
+      // Use cloud storage in production, local storage in development
+      if (process.env.NODE_ENV === 'production' && process.env.AWS_ACCESS_KEY_ID) {
+        fileUrl = await uploadFileToS3(imageBuffer, filename, file.type);
+      } else {
+        fileUrl = await saveFileLocally(imageBuffer, filename);
+      }
     }
+
+    if (!fileUrl) {
+      return NextResponse.json({ error: "file or fileUrl is required" }, { status: 400 });
+    }
+
+    // For now, skip OCR and just save the receipt
+    // OCR can be added later with a different library
+    // const parsed = {};
+
+    const receipt = await prisma.receipt.create({
+      data: {
+        fileUrl,
+        vendorName: vendorNameInput ?? null,
+        date: dateInput ? new Date(dateInput) : null,
+        grandTotal: grandTotalInput ?? null,
+        status: "DRAFT",
+      },
+    });
+
+    return NextResponse.json({ receipt }, { status: 201 });
+  } catch (error) {
+    console.error("Error creating receipt:", error);
+    return NextResponse.json({ error: "Failed to create receipt" }, { status: 500 });
   }
-
-  if (!fileUrl) {
-    return NextResponse.json({ error: "file or fileUrl is required" }, { status: 400 });
-  }
-
-  // For now, skip OCR and just save the receipt
-  // OCR can be added later with a different library
-  // const parsed = {};
-
-  const receipt = await prisma.receipt.create({
-    data: {
-      fileUrl,
-      vendorName: vendorNameInput ?? null,
-      date: dateInput ? new Date(dateInput) : null,
-      grandTotal: grandTotalInput ?? null,
-      status: "DRAFT",
-    },
-  });
-
-  return NextResponse.json({ receipt }, { status: 201 });
 }
