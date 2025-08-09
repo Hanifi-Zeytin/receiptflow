@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core models for receipt app
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  receipts  Receipt[] @relation("UserReceipts")
+  memberships Membership[]
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  receipts     Receipt[]
+  memberships  Membership[]
+  exportJobs   ExportJob[]
+}
+
+model Membership {
+  id             String        @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole       @default(MEMBER)
+  createdAt      DateTime      @default(now())
+
+  user          User         @relation(fields: [userId], references: [id])
+  organization  Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+}
+
+model Receipt {
+  id              String        @id @default(cuid())
+  organizationId  String?
+  uploaderId      String?
+  fileUrl         String
+  vendorName      String?
+  taxId           String?
+  date            DateTime?
+  subtotal        Decimal?
+  vatTotal        Decimal?
+  grandTotal      Decimal?
+  currency        String?       @default("TRY")
+  status          ReceiptStatus @default(DRAFT)
+  rawOcrText      String?
+  ocrProvider     String?       @default("tesseract")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  uploader     User?         @relation("UserReceipts", fields: [uploaderId], references: [id])
+  items        ReceiptItem[]
+}
+
+model ReceiptItem {
+  id         String   @id @default(cuid())
+  receiptId  String
+  lineNo     Int
+  description String
+  quantity   Decimal
+  unitPrice  Decimal
+  vatRate    Decimal?
+  lineTotal  Decimal
+
+  receipt    Receipt  @relation(fields: [receiptId], references: [id])
+
+  @@unique([receiptId, lineNo])
+}
+
+model ExportJob {
+  id             String         @id @default(cuid())
+  organizationId String
+  format         ExportFormat
+  status         ExportStatus   @default(PENDING)
+  fileUrl        String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+}
+
+enum UserRole {
+  USER
+  ACCOUNTANT
+}
+
+enum OrgRole {
+  MEMBER
+  ADMIN
+}
+
+enum ReceiptStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum ExportFormat {
+  CSV
+  XLSX
+  JSON
+}
+
+enum ExportStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
