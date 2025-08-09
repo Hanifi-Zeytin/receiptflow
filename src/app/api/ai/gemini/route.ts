@@ -41,6 +41,16 @@ function buildPrompt(hints?: AnalyzeRequest["headerHint"]) {
   ].join("\n");
 }
 
+async function fetchUrlToBase64(url: string): Promise<{ base64: string; mimeType: string }> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Resim indirilemedi: ${res.status}`);
+  const arrayBuf = await res.arrayBuffer();
+  const bytes = Buffer.from(arrayBuf);
+  const base64 = bytes.toString("base64");
+  const mimeType = res.headers.get("content-type") || "image/*";
+  return { base64, mimeType };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as AnalyzeRequest;
@@ -68,10 +78,11 @@ export async function POST(req: NextRequest) {
         },
       });
     } else if (body.imageUrl) {
+      const { base64, mimeType } = await fetchUrlToBase64(body.imageUrl);
       inputs.push({
-        fileData: {
-          fileUri: body.imageUrl,
-          mimeType: "image/*",
+        inlineData: {
+          mimeType,
+          data: base64,
         },
       });
     }
